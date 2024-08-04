@@ -1,0 +1,237 @@
+---
+title: "Cyclistic User Patterns"
+author: "Case Study"
+date: "`r Sys.Date()`"
+output: html_document
+code_folding: hide
+---
+
+```{r inst, eval = FALSE, include=FALSE}
+#use this in the console to extract the code
+knitr::purl("Code/First_Pass.Rmd")
+```
+
+```{r setup2, eval = TRUE, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r Laod_tidyverse, include=FALSE, echo = TRUE}
+
+source("Cyc_run.R", echo=FALSE)
+```
+
+```{r empty_bloc, eval=FALSE}
+names(s1)
+Mode(s1$rideable_type)
+```
+
+```{r Load_data, include=FALSE, eval = TRUE}
+
+by_date <- s1 %>% 
+  group_by(member_casual, month, day_of_week, date) %>% 
+  summarize(n = n())
+
+avg_wd <- by_date %>% 
+  group_by(member_casual, day_of_week) %>% 
+  summarize(m = mean(n))
+```
+
+```{r AvgByDay, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+avg_wd <- as.data.frame(avg_wd)
+tbl_1 <- avg_wd %>% 
+  spread(member_casual, m) %>% 
+  mutate(daily_avg = casual + member) %>% 
+  mutate_if(is.numeric, round)
+
+knitr::kable(tbl_1, col.names = gsub("_", " ", names(tbl_1)), caption = "Daily average number of rides, by weekday")
+```
+
+```{r AvgByDayGph, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+g1 <- ggplot(avg_wd, aes(x= day_of_week, y = m, fill = member_casual)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  labs(title = "Daily Average, by weekday", fill = "Rider type", 
+       x = "Day of the Week", y = "Average # of rides")
+g1
+```
+
+\newpage
+
+```{r AvgByMonth, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+# Daily Average, by month -------------------------------------------------------
+avg_mo <- by_date %>% 
+  group_by(member_casual, month) %>% 
+  summarize(m = mean(n))
+
+avg_mo <- as.data.frame(avg_mo)
+tbl_2 <- avg_mo %>% 
+  spread(member_casual, m) %>% 
+  mutate(daily_avg = casual + member) %>% 
+  mutate_if(is.numeric, round)
+
+knitr::kable(tbl_2, col.names = gsub("_", " ", names(tbl_2)), caption = "Daily average number of rides, by month")
+
+# abbreviate month names
+avg_mo$month <- factor(avg_mo$month, levels = month.name, labels = month.abb)
+
+ggplot(avg_mo, aes(x= month, y = m, fill = member_casual)) +
+  geom_bar(stat = "identity", position = "dodge")+ 
+  labs(title = "Daily Average, by month", fill = "Rider type", 
+       x = "Month", y = "Average # of rides \n per day")
+
+```
+
+\newpage
+
+```{r AvgByknitr, echo = FALSE, message = FALSE, warning = FALSE, eval = FALSE}
+# knitr -------------------------------------------------------
+
+knitr::kables(
+  list(
+    # the first kable() to change
+    knitr::kable(tbl_1, col.names = gsub("_", " ", names(tbl_1)), caption = "Average Daily number of rides"),
+
+    # the second kable() to change
+    knitr::kable(tbl_2, col.names = gsub("_", " ", names(tbl_2)), caption = "Average Monthly number of rides")
+  )
+)
+
+```
+
+\newpage
+
+#### Monthly Average number of rides, by Station (June, 2023 - May, 2024):
+```{r AvgByStation, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+# Monthly Average, by station ---------------------------------------------
+by_month <- s1 %>% 
+  filter(!is.na(start_station_name)) %>% 
+  group_by(member_casual, start_station_name, month) %>% 
+  summarize(n = n())
+
+by_month <- as.data.frame(by_month)
+
+by_station <- by_month %>% 
+  group_by(member_casual, start_station_name) %>% 
+  summarize(m = mean(n)) %>% 
+  spread(member_casual, m)  %>% 
+  mutate(monthly_avg = casual + member) 
+
+by_station <- as.data.frame(by_station)
+
+by_july <- by_month %>% 
+  filter(month == "July") %>% 
+  group_by(member_casual, start_station_name) %>% 
+  summarize(m = mean(n)) %>% 
+  spread(member_casual, m) %>% 
+  replace_na(list(casual = 0, member = 0)) %>% 
+  mutate(monthly_avg = casual + member) 
+
+by_july <- as.data.frame(by_july)
+
+by_hour <- s1 %>% 
+  group_by(member_casual, hour) %>% 
+  summarize(n = n()) 
+
+by_hour <- as.data.frame(by_hour)
+
+by_month <- mutate_if(by_month, is.numeric, round)
+by_station <- mutate_if(by_station, is.numeric, round)
+
+```
+
+
+```{r Top10Station, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+tbl_3 <- by_station %>% 
+  arrange(desc(monthly_avg)) %>% 
+  head(10)
+#  top_n(10)
+
+knitr::kable(tbl_3, col.names = gsub("_", " ", names(tbl_3)), caption = "Top 10 stations, by average # of rides per month")
+```
+
+\newpage
+
+```{r Top10Casual, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+
+tbl_4 <- by_station %>% 
+  arrange(desc(casual)) %>% 
+  head(10)
+
+#tbl_4 <- mutate(tbl_4, x = rep("", nrow(tbl_4)))
+
+
+```
+
+```{r Top10Member, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+
+tbl_5 <- by_station %>% 
+  arrange(desc(member)) %>% 
+  head(10)
+
+knitr::kables(
+  list(
+    # the first kable() to change
+    knitr::kable(tbl_4, col.names = gsub("_", " ", names(tbl_4)), caption = "Top 10 stations, for casual users"),
+
+    # the second kable() to change
+    knitr::kable(tbl_5, col.names = gsub("_", " ", names(tbl_5)), caption = "Top 10 stations, for members")
+  )
+)
+
+```
+
+\newpage
+
+
+```{r Top10JulyCasual, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+# Monthly Average, by station in JULY ---------------------------------------
+
+tbl_6 <- by_july %>% 
+  arrange(desc(monthly_avg)) %>% 
+  head(10)
+
+```
+
+
+
+```{r countNpercent, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+# Hourly count ------------------------------------------------------------
+tbl_7 <- by_hour %>% 
+  spread(member_casual, n) %>% 
+  mutate(hourly_count = casual + member,
+         p = hourly_count/sum(hourly_count)*100,
+         p = round(p, 1)) %>% 
+  arrange(hour)
+
+knitr::kables(
+  list(
+    # the first kable() to change
+    knitr::kable(tbl_6, col.names = c("Station", "Casual", "Members", "Total"), caption = "Top 10 stations, for July"),
+
+    # the second kable() to change
+    knitr::kable(tbl_7, col.names = gsub("_", " ", names(tbl_7)), caption = "Total # of rides in each hour of the day")
+  )
+)
+
+
+ggplot(by_hour, aes(x= hour, y = n, fill = member_casual)) +
+  geom_bar(stat = "identity", position = "dodge")
+```
+
+#### Ratio of bike type use (Classic or Electric)
+```{r BikeType, echo = FALSE, message = FALSE, warning = FALSE, eval = TRUE}
+
+
+# Percent use, by bicycle type --------------------------------------------
+by_type <- s1 %>% 
+  filter(rideable_type != "docked") %>% 
+  group_by(member_casual) %>% 
+  mutate(gn = n()) %>% 
+  group_by(member_casual, rideable_type) %>% 
+  reframe(n = n(), p = n / gn * 100) %>% 
+  unique()
+
+ggplot(by_type, aes(y= p, x = rideable_type, fill = member_casual)) +
+  geom_bar(stat = "identity", position = "dodge") + ylim(c(0,100))
+
+
+```

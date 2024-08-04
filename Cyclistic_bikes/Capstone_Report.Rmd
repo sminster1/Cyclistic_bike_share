@@ -1,0 +1,34 @@
+---
+title: "Cyclistic User Patterns"
+author: "Case Study"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("../Cap_Stone/Code")
+source("Cyc_run.R", echo=FALSE)
+setwd("..")
+```
+
+```{r code_read, include=FALSE, cache=FALSE}
+knitr::read_chunk("Code/start_code.R")
+```
+
+```{r, test-b, echo=FALSE, eval=TRUE}
+# Calculate the number of records missing station names
+# Calculate the number of records missing start date/times
+```
+There are a total of ``r t_gb`` records in the dataset.
+
+``r start_missing`` of the records are missing the start time for the ride.  These records (if any) will not be included in the monthly, daily or hourly traffic analysis.
+
+``r station_missing`` of the records are missing the start station name for the ride.  Any records missing the start time or the station name will not be included in the station traffic analysis.
+
+
+```{r child_rmd, child="Code/Cap_Stone.Rmd"}
+# Calling the analytics report, tables, graphs and such
+```
+

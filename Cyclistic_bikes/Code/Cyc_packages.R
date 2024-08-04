@@ -1,0 +1,7 @@
+getwd()
+library(tidyverse)
+# library(tidymodels)  
+# library(dplyr)
+# library(rsample)
+# library(broom)
+# library(gridExtra)
