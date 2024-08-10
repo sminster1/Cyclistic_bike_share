@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-setwd("../Cap_Stone/Code")
+setwd("../Cyclistic_bikes/Code")
 source("Cyc_run.R", echo=FALSE)
 setwd("..")
 ```
